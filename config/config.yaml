@@ -1,0 +1,229 @@
+# Configuration for Nutrient Analysis Model Training
+
+# Dataset Configuration
+dataset:
+  name: "Food-101-Extended"
+  data_dir: "./data/food101"
+  num_classes: 500  # 101 original + 378 cultural additions
+  image_size: 224
+  num_workers: 4
+  pin_memory: true
+
+  # Food security categories
+  food_security_categories:
+    staple_foods: 15
+    affordable_proteins: 18
+    accessible_produce: 22
+    processed_foods: 28
+    specialty_foods: 18
+
+  # Data split
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+
+  # Augmentation
+  augmentation:
+    random_crop: true
+    horizontal_flip: true
+    color_jitter:
+      brightness: 0.1
+      contrast: 0.1
+      saturation: 0.1
+    rotation: 15
+    normalize:
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+
+# Model Configuration
+model:
+  architecture: "MobileNetV3"
+  width_multiplier: 1.0
+
+  # Architectural components
+  depthwise_separable: true
+  inverted_residuals: true
+  reduction_ratio: 4
+
+  # Attention mechanisms
+  squeeze_excitation: true
+  shuffle_attention: true
+  shuffle_groups: 8
+
+  # Multi-task heads
+  output_heads:
+    food_recognition: true
+    portion_estimation: true
+    nutrient_prediction: true
+
+  # Dropout
+  dropout: 0.2
+
+# Training Configuration
+training:
+  # Basic settings
+  batch_size: 32
+  num_epochs: 200
+  learning_rate: 0.001
+  weight_decay: 0.001
+
+  # Optimizer
+  optimizer: "Adam"
+  optimizer_params:
+    beta1: 0.9
+    beta2: 0.999
+    eps: 1.0e-8
+
+  # Learning rate scheduler
+  scheduler: "CosineAnnealingLR"
+  scheduler_params:
+    T_max: 200
+    eta_min: 0.0
+
+  # Multi-task loss weights
+  loss_weights:
+    alpha: 1.0  # Food recognition (cross-entropy)
+    beta: 0.5   # Portion estimation (MSE)
+    gamma: 0.5  # Macronutrient prediction (MAE)
+    delta: 0.3  # Micronutrient prediction
+
+  # Micronutrient importance weights
+  micronutrient_weights:
+    vitamin_a: 1.2
+    vitamin_c: 1.1
+    vitamin_d: 1.3
+    iron: 1.4
+    calcium: 1.3
+    zinc: 1.2
+
+  # Gradient clipping
+  grad_clip: 1.0
+
+  # Mixed precision training
+  mixed_precision: true
+
+  # Checkpointing
+  save_frequency: 10
+  checkpoint_dir: "./checkpoints"
+
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 15
+    min_delta: 0.001
+
+# Knowledge Distillation Configuration
+distillation:
+  enabled: true
+  teacher_model: "EfficientNet-B0"
+  teacher_checkpoint: "./pretrained/efficientnet_b0.pth"
+  temperature: 2.0
+  lambda_distill: 0.5
+
+  # Student-teacher alignment
+  feature_alignment: true
+  alignment_layers: [3, 6, 9]
+
+# Cross-validation
+cross_validation:
+  enabled: true
+  num_folds: 5
+  stratified: true
+
+# Mobile Optimization Configuration
+mobile_optimization:
+  # Quantization
+  quantization:
+    enabled: true
+    method: "post_training_static"
+    dtype: "qint8"  # 8-bit quantization
+    per_channel: true
+
+  # TensorFlow Lite conversion
+  tflite:
+    enabled: true
+    optimization: "DEFAULT"
+    representative_dataset_size: 100
+
+  # ONNX export
+  onnx:
+    enabled: true
+    opset_version: 13
+    dynamic_axes: true
+
+# Interpretability Configuration
+interpretability:
+  # Grad-CAM
+  gradcam:
+    enabled: true
+    target_layer: "features.16"  # Last conv layer
+    post_processing: true
+
+  # LIME
+  lime:
+    enabled: true
+    num_samples: 1000
+    num_features: 10
+    kernel_width: 0.25
+
+  # Concept Activation Vectors
+  cav:
+    enabled: true
+    concepts:
+      western: ["low-sodium", "high-fiber", "gluten-free", "plant-based"]
+      asian: ["balanced-nutrition", "cooling-foods", "warming-foods", "digestive-harmony"]
+      african: ["energy-dense", "drought-resistant", "traditional-preparation", "seasonal-availability"]
+
+# Evaluation Configuration
+evaluation:
+  # Metrics
+  metrics:
+    - "top1_accuracy"
+    - "top5_accuracy"
+    - "mae"
+    - "mape"
+    - "micronutrient_mae"
+
+  # Interpretability metrics
+  interpretability_metrics:
+    - "localisation_score"
+    - "feature_consistency"
+    - "explanation_stability"
+    - "decision_boundary_accuracy"
+
+  # Cross-dataset evaluation
+  cross_dataset:
+    enabled: true
+    datasets:
+      - "asian_foods"
+      - "mediterranean_foods"
+      - "low_resource"
+
+  # Device testing
+  device_testing:
+    enabled: true
+    devices:
+      - "entry_level_android"
+      - "budget_ios"
+      - "mid_range"
+
+# Logging Configuration
+logging:
+  use_tensorboard: true
+  log_dir: "./logs"
+  log_frequency: 10
+
+  # Wandb (optional)
+  use_wandb: false
+  wandb_project: "nutrient-analysis"
+  wandb_entity: ""
+
+# Reproducibility
+seed: 42
+deterministic: true
+
+# Hardware Configuration
+hardware:
+  device: "cuda"  # cuda, cpu, or mps
+  gpu_ids: [0]
+  num_gpus: 1
