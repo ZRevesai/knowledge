@@ -1,0 +1,227 @@
+# Default configuration for NUTRINET
+# Based on Section 3.6 implementation details from the paper
+
+# Model Architecture
+model:
+  # Hierarchical graph structure
+  num_micronutrients: 50  # Vitamins, minerals, amino acids
+  num_food_components: 30  # Proteins, carbohydrates, fats
+  num_health_outcomes: 20  # Biomarkers, clinical indicators
+
+  # Model dimensions
+  input_dim: 64         # Input feature dimension
+  hidden_dim: 64        # Hidden representation dimension (adaptive between 32-128)
+  edge_dim: 16          # Edge feature dimension
+  context_dim: 10       # Context feature dimension (age, pregnancy, medications)
+  output_dim: 1         # Output dimension (prediction task)
+
+  # Message passing
+  num_message_passing_steps: 5  # Maximum iterations (adaptive between 2-5)
+  min_message_passing_steps: 2  # Minimum iterations
+  convergence_threshold: 0.01   # Threshold γ for early stopping (Eq. 6)
+
+  # Sparse attention mechanism
+  num_attention_heads: 4           # Number of attention heads
+  sparse_attention_threshold: 0.5  # Threshold τ for sparse gating (Eq. 12)
+  sparse_attention_top_k: null     # Alternative: use top-k instead of threshold
+  learnable_threshold: true        # Whether τ is learnable
+
+  # Computational efficiency optimizations
+  enable_quantization: true        # Enable feature quantization (Eq. 4)
+  num_quantization_bits: 8         # Quantization bits (4, 8, or 16)
+  enable_adaptive_dim: true        # Enable adaptive dimension (Eq. 7)
+  d_min: 32                       # Minimum adaptive dimension
+  d_max: 128                      # Maximum adaptive dimension
+
+  # Transparent prediction
+  significance_threshold: 0.1     # Threshold ε for subgraph extraction (Eq. 8)
+  max_path_length: 5             # Maximum path length for analysis
+  max_paths: 10                  # Maximum number of paths to extract
+
+# Training Configuration
+training:
+  # Basic training parameters
+  batch_size: 32
+  num_epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001  # 1e-5 as per paper
+
+  # Optimizer
+  optimizer: "adam"
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1e-8
+
+  # Learning rate scheduling
+  use_lr_scheduler: true
+  lr_scheduler_type: "reduce_on_plateau"
+  lr_patience: 10
+  lr_factor: 0.5
+  lr_min: 1e-6
+
+  # Early stopping
+  early_stopping_patience: 15
+  early_stopping_metric: "val_loss"
+  early_stopping_mode: "min"
+
+  # Gradient clipping
+  gradient_clip_norm: 1.0
+
+  # Logging
+  log_interval: 10
+  checkpoint_interval: 10
+  save_best_only: true
+
+# Data Configuration
+data:
+  # Dataset selection
+  dataset: "nhanes"  # Options: 'usda', 'nhanes', 'framingham'
+  data_dir: "./data"
+
+  # Data splitting (as per paper: 80:20 with 5-fold CV)
+  train_ratio: 0.8
+  val_ratio: 0.1
+  test_ratio: 0.1
+  num_folds: 5  # For cross-validation
+  random_seed: 42
+
+  # Data preprocessing
+  normalization: "standard"  # Options: 'standard', 'robust', 'minmax'
+  imputation_strategy: "median"  # Options: 'mean', 'median', 'most_frequent'
+
+  # Population-specific features
+  population_type: "elderly"  # Options: 'elderly', 'pregnant', 'pediatric', 'chronic'
+  include_demographics: true
+  include_context: true
+
+  # Data loading
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2
+
+# Evaluation Configuration
+evaluation:
+  # Metrics to compute
+  metrics:
+    - "mae"  # Mean Absolute Error (primary for nutrient prediction)
+    - "auc"  # Area Under ROC Curve (primary for deficiency risk)
+    - "f1"   # F1-score (primary for recommendations)
+    - "rmse"
+    - "r2"
+    - "precision"
+    - "recall"
+    - "accuracy"
+
+  # Interpretability evaluation
+  compute_interpretability: true
+  num_explanation_samples: 100
+
+  # Computational efficiency tracking
+  track_energy: true
+  track_memory: true
+  track_time: true
+
+  # Baseline comparison
+  baseline_models:
+    - name: "FeedForward"
+      energy_kwh: 15.8
+    - name: "NutriCNN"
+      energy_kwh: 47.3
+    - name: "GCN"
+      energy_kwh: 28.4
+    - name: "GAT"
+      energy_kwh: 59.2
+    - name: "RGCN"
+      energy_kwh: 68.7
+
+# Energy Monitoring Configuration
+energy:
+  # codecarbon settings
+  output_dir: "./emissions"
+  country_iso_code: "USA"
+  tracking_mode: "machine"  # Options: 'machine', 'process'
+  log_level: "warning"
+
+  # Power constants (in Watts)
+  cpu_tdp: 65.0   # Typical CPU TDP
+  gpu_tdp: 250.0  # Typical GPU TDP
+
+# Experiment Configuration
+experiment:
+  # Experiment tracking
+  experiment_name: "nutrinet_baseline"
+  run_name: null  # Auto-generated if null
+  tags: ["nutrinet", "nutrient-analysis", "graph-neural-network"]
+
+  # Output directories
+  checkpoint_dir: "./checkpoints"
+  log_dir: "./logs"
+  results_dir: "./results"
+  figures_dir: "./figures"
+
+  # Reproducibility
+  seed: 42
+  deterministic: true
+  benchmark: false  # Set to true for performance, false for reproducibility
+
+# Hardware Configuration
+hardware:
+  # Device selection
+  device: "cuda"  # Options: 'cuda', 'cpu', 'mps' (for Apple Silicon)
+  cuda_device: 0
+  num_gpus: 1
+
+  # Multi-GPU training
+  distributed: false
+  backend: "nccl"  # Options: 'nccl', 'gloo'
+
+  # Mixed precision training
+  use_amp: false  # Automatic Mixed Precision
+  amp_dtype: "float16"
+
+# Logging and Visualization
+logging:
+  # Console logging
+  log_level: "INFO"
+  log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # TensorBoard
+  use_tensorboard: true
+  tensorboard_dir: "./runs"
+
+  # Weights & Biases
+  use_wandb: false
+  wandb_project: "nutrinet"
+  wandb_entity: null
+
+  # Plotting
+  plot_training_curves: true
+  plot_attention_heatmaps: true
+  plot_explanations: true
+  save_plots: true
+
+# Advanced Options
+advanced:
+  # For researchers and advanced users
+
+  # Custom loss weights
+  loss_weights:
+    prediction: 1.0
+    regularization: 0.01
+
+  # Custom interaction types
+  interaction_types:
+    - "synergistic"
+    - "antagonistic"
+    - "threshold_dependent"
+    - "neutral"
+
+  # Node importance calculation
+  importance_method: "gradient"  # Options: 'gradient', 'attention', 'integrated_gradients'
+
+  # Explanation templates
+  explanation_templates:
+    synergistic: "{source} enhances the absorption/utilization of {target}"
+    antagonistic: "{source} inhibits the absorption/utilization of {target}"
+    threshold_dependent: "{source} affects {target} in a dose-dependent manner"
+    neutral: "{source} is metabolically connected to {target}"
