@@ -1,0 +1,104 @@
+# Configuration file for KGNN Training and Evaluation
+
+# Model Configuration
+model:
+  name: "KGNN"
+  embedding_dim: 128
+  hidden_dims: [256, 128, 64]
+  num_micronutrients: 12
+  dropout_rate: 0.3
+  activation: "relu"
+  use_batch_norm: true
+
+# Knowledge Integration
+knowledge:
+  similarity_threshold: 0.3  # τ_sim from paper
+  knowledge_weight: 0.3      # λ_k from paper
+  explanation_weight: 0.2    # λ_e from paper
+  use_ontology: true
+  use_interactions: true
+
+# Training Configuration
+training:
+  batch_size: 64
+  num_epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  optimizer: "adam"
+  scheduler: "cosine"
+  early_stopping_patience: 15
+  gradient_clip: 1.0
+
+# Data Configuration
+data:
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  stratify: true
+  random_seed: 42
+  num_workers: 4
+
+# Micronutrients to detect
+micronutrients:
+  - "Vitamin_B12"
+  - "Vitamin_D"
+  - "Vitamin_B6"
+  - "Folate"
+  - "Iron"
+  - "Calcium"
+  - "Magnesium"
+  - "Zinc"
+  - "Vitamin_C"
+  - "Vitamin_E"
+  - "Vitamin_A"
+  - "Selenium"
+
+# Feature Categories
+features:
+  dietary_intake: 50
+  anthropometric: 8
+  biochemical: 15
+  medical_history: 20
+  functional_assessment: 12
+
+# Evaluation
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "auc_roc"
+  interpretability_metrics:
+    - "explanation_completeness"
+    - "explanation_consistency"
+    - "feature_concentration"
+
+# Baseline Models
+baselines:
+  - "FFNN"
+  - "XGBoost"
+  - "Transformer"
+  - "FFNN_SHAP"
+  - "LIME"
+
+# Visualization
+visualization:
+  save_attention_maps: true
+  save_feature_importance: true
+  plot_format: "png"
+  dpi: 300
+
+# Paths
+paths:
+  data_dir: "./data"
+  results_dir: "./results"
+  models_dir: "./models"
+  logs_dir: "./logs"
+  figures_dir: "./figures"
+
+# Reproducibility
+reproducibility:
+  seed: 42
+  deterministic: true
+  benchmark: false
