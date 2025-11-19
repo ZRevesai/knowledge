@@ -1,0 +1,160 @@
+# SIDRM Model Configuration
+# Smart Interpretable Dietary Recommender Model for Vulnerable Populations
+# Reference: Revesai & Kogeda (2025)
+
+model:
+  # Input/Output dimensions
+  input_dim: 105              # NHANES feature dimension
+  num_populations: 4          # P (Pregnant), E (Elderly), C (Children), CD (Chronic Disease)
+  num_nutrients: 50           # Number of nutrients to predict
+
+  # Architecture (Section 3.2-3.3)
+  hidden_dim: 128             # Hidden dimension (h in equations)
+  num_layers: 5               # Number of transformer layers (5 hierarchical layers)
+  num_attention_heads: 8      # Number of attention heads
+  ff_dim: 512                 # Feed-forward dimension (4x hidden_dim)
+  dropout_rate: 0.3           # Dropout probability
+
+  # Population-specific processing
+  use_population_specific: true
+  filter_size: 3              # Convolutional filter size (f in Equation 3)
+
+training:
+  # Optimizer configuration (Section 3.5)
+  learning_rate: 1.0e-4       # Initial learning rate
+  weight_decay: 1.0e-5        # Weight decay for AdamW
+  optimizer: 'adamw'          # AdamW optimizer
+  betas: [0.9, 0.999]         # Adam betas
+  eps: 1.0e-8                 # Adam epsilon
+
+  # Learning rate scheduling
+  patience: 15                # Epochs to wait before reducing LR
+  decay_factor: 0.7           # LR decay factor (multiply by 0.7)
+  min_lr: 1.0e-7              # Minimum learning rate
+
+  # Training parameters
+  batch_size: 32              # Batch size for population-specific training
+  num_epochs: 200             # Maximum number of epochs
+  gradient_clip: 1.0          # Gradient clipping threshold
+
+  # Early stopping
+  early_stopping_patience: 30 # Patience for early stopping
+
+  # Other
+  random_state: 42            # Random seed for reproducibility
+
+loss:
+  # Multi-objective loss weights (Equation 13)
+  alpha: 0.4                  # Accuracy loss weight (L_accuracy)
+  beta: 0.3                   # Interpretability loss weight (L_interpret)
+  gamma: 0.2                  # Clinical loss weight (L_clinical)
+  delta: 0.1                  # Safety loss weight (L_safety)
+
+  # Interpretability loss parameters
+  entropy_weight: 1.0         # Attention entropy weight
+  sparsity_weight: 0.5        # Attention sparsity weight
+
+  # Safety loss parameters
+  toxicity_weight: 2.0        # Toxicity penalty weight
+
+data:
+  # NHANES dataset (2015-2018 cycles)
+  n_samples: 15560            # Total number of participants (as per paper)
+
+  # Data splits (Section 3.1)
+  train_ratio: 0.70           # Training set: 70% (10,892 samples)
+  val_ratio: 0.15             # Validation set: 15% (2,334 samples)
+  test_ratio: 0.15            # Test set: 15% (2,334 samples)
+
+  # Population distribution
+  pregnant_ratio: 0.15        # Pregnant women: 15%
+  elderly_ratio: 0.30         # Elderly individuals: 30%
+  children_ratio: 0.25        # Children: 25%
+  chronic_disease_ratio: 0.30 # Chronic disease patients: 30%
+
+  # Data loading
+  num_workers: 4              # Number of data loading workers
+  shuffle_train: true         # Shuffle training data
+  pin_memory: true            # Pin memory for faster GPU transfer
+
+  # Data preprocessing
+  scale_features: true        # Standardize features
+  handle_missing: 'mean'      # How to handle missing values: 'mean', 'median', 'drop'
+
+interpretability:
+  # SHAP interpretability (Equation 9-10)
+  num_bootstrap_samples: 100  # Bootstrap samples for SHAP stability (r in Eq 10)
+  shap_nsamples: 100          # Samples for SHAP value computation
+
+  # Attention consistency (Equation 11)
+  compute_attention_consistency: true
+
+  # Feature ranking correlation (Equation 12)
+  compute_ranking_correlation: true
+
+evaluation:
+  # Performance metrics
+  compute_per_nutrient: true   # Per-nutrient metrics
+  compute_per_population: true # Per-population metrics
+  compute_confusion_matrix: true
+  compute_auc_roc: true
+
+  # Population-specific evaluation (Table 2)
+  population_names:
+    - 'Pregnant'
+    - 'Elderly'
+    - 'Children'
+    - 'Chronic_Disease'
+
+  # Key nutrients to track (subset of 50 total)
+  primary_nutrients:
+    - 'Vitamin_B12'
+    - 'Vitamin_D'
+    - 'Vitamin_B6'
+    - 'Folate'
+    - 'Iron'
+    - 'Calcium'
+    - 'Magnesium'
+    - 'Zinc'
+    - 'Vitamin_C'
+    - 'Vitamin_E'
+    - 'Vitamin_A'
+    - 'Selenium'
+
+checkpointing:
+  save_dir: 'checkpoints/sidrm'
+  save_best: true              # Save best model based on validation loss
+  save_interval: 10            # Save checkpoint every N epochs
+  keep_last_n: 3               # Keep last N checkpoints
+
+logging:
+  log_dir: 'logs/sidrm'
+  tensorboard: true            # Use TensorBoard logging
+  log_interval: 10             # Log every N batches
+
+  # What to log
+  log_gradients: false         # Log gradient statistics
+  log_weights: false           # Log weight statistics
+  log_attention: true          # Log attention weights
+
+visualization:
+  save_plots: true
+  plot_dir: 'figures/sidrm'
+
+  # What to plot
+  plot_training_history: true
+  plot_attention_heatmaps: true
+  plot_confusion_matrices: true
+  plot_roc_curves: true
+
+# Device configuration
+device:
+  use_cuda: true               # Use CUDA if available
+  cuda_device: 0               # CUDA device index
+  mixed_precision: false       # Use mixed precision training (AMP)
+
+# Reproducibility
+reproducibility:
+  seed: 42                     # Random seed
+  deterministic: true          # Use deterministic algorithms
+  benchmark: false             # CUDNN benchmark mode

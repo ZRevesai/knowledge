@@ -8,9 +8,10 @@ scikit-learn>=1.0.2
 xgboost>=1.5.1
 transformers>=4.20.0
 
-# Interpretability
+# Interpretability & Explainability
 shap>=0.39.0
 lime>=0.2.0.1
+captum>=0.5.0  # For integrated gradients and other interpretability methods
 
 # Visualization
 matplotlib>=3.4.3
@@ -29,6 +30,7 @@ omegaconf>=2.1.1
 tqdm>=4.62.3
 jupyter>=1.0.0
 notebook>=6.4.5
+tensorboard>=2.8.0  # For training visualization
 
 # Testing
 pytest>=6.2.5
@@ -36,3 +38,13 @@ pytest-cov>=3.0.0
 
 # Optional: For NHANES data processing
 openpyxl>=3.0.9
+
+# SIDRM-Specific Dependencies
+# For mobile optimization and quantization
+torch-quantization>=0.1.0  # Model quantization
+onnx>=1.10.0  # For mobile deployment
+onnxruntime>=1.10.0  # ONNX runtime for inference
+
+# For advanced interpretability
+alibi>=0.7.0  # Additional interpretability algorithms
+interpret>=0.2.7  # Microsoft interpretML library
